@@ -172,8 +172,15 @@ namespace style {
 namespace conversion {
 
 template <>
+Result<GeoJSON> convertGeoJSON(const QMapbox::Feature& feature) {
+    return Result<GeoJSON> { GeoJSON { asMapboxGLFeature(feature) } };
+}
+
+template <>
 Result<GeoJSON> convertGeoJSON(const QVariant& value) {
-    if (value.type() != QVariant::ByteArray) {
+    if (value.typeName() == QStringLiteral("QMapbox::Feature")) {
+        return convertGeoJSON(value.value<QMapbox::Feature>());
+    } else if (value.type() != QVariant::ByteArray) {
         return Error { "JSON data must be in QByteArray" };
     }
 
@@ -193,7 +200,7 @@ Result<GeoJSON> convertGeoJSON(const QVariant& value) {
         return Error { message.str() };
     }
 
-    conversion::Result<GeoJSON> geoJSON = conversion::convertGeoJSON<JSValue>(d);
+    Result<GeoJSON> geoJSON = convertGeoJSON<JSValue>(d);
     if (!geoJSON) {
         return Error { geoJSON.error().message };
     }
